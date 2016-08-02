@@ -10,8 +10,8 @@ git submodule update
 cd colorpal
 ndk-build
 cd ..
-./gradlew assembleRelease
+./gradlew build publish
 ```
 
-This will produce the aar artifact in `colorpal/build/outputs/aar/colorpal-release.aar`
+This will produce the aar artifact in `colorpal/build/repo/com/pushd/colorpal/<Version>/colorpal-<Version>.aar`
 

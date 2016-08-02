@@ -26,3 +26,21 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
 }
+
+apply plugin: 'maven-publish'
+
+publishing {
+    publications {
+        colorpal(MavenPublication) {
+            groupId 'com.pushd'
+            artifactId 'colorpal'
+            version '0.1'
+            artifact("$buildDir/outputs/aar/colorpal-release.aar")
+        }
+    }
+    repositories {
+        maven {
+            url "$buildDir/repo"
+        }
+    }
+}
