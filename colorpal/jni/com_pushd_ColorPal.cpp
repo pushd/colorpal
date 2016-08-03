@@ -18,61 +18,61 @@ extern "C" {
 
 JNIEXPORT jlong JNICALL Java_com_pushd_colorpal_ColorCorrector_createTransform(JNIEnv *env, jobject obj, jstring javaString) {
 
-	// this will give us java's "modified" UTF-8 but for icc profile paths this shouldn't matter
-	const char *iccPath = env->GetStringUTFChars(javaString, JNI_FALSE);
+    // this will give us java's "modified" UTF-8 but for icc profile paths this shouldn't matter
+    const char *iccPath = env->GetStringUTFChars(javaString, JNI_FALSE);
 
-	cmsHPROFILE hInputProfile = cmsCreate_sRGBProfile();
+    cmsHPROFILE hInputProfile = cmsCreate_sRGBProfile();
 
-	if (!hInputProfile) {
-		LOGE("Could not open SRGB Profile");
-		return 0;
-	}
+    if (!hInputProfile) {
+        LOGE("Could not open SRGB Profile");
+        return 0;
+    }
 
-	cmsHPROFILE hOutputProfile = cmsOpenProfileFromFile(iccPath, "r");
+    cmsHPROFILE hOutputProfile = cmsOpenProfileFromFile(iccPath, "r");
 
-	if (!hOutputProfile) {
-		LOGE("Could not open ICC Profile at %s", iccPath);
-		return 0;
-	}
+    if (!hOutputProfile) {
+        LOGE("Could not open ICC Profile at %s", iccPath);
+        return 0;
+    }
 
-	// create the transform for concurrent use (cmsFLAGS_NOCACHE)
-	// http://littlecms2.blogspot.com/2010/12/multithreading-question.html
-	cmsHTRANSFORM hTransform = cmsCreateTransform(hInputProfile,
-												  TYPE_RGBA_8,
-												  hOutputProfile,
-												  TYPE_RGBA_8,
-												  INTENT_PERCEPTUAL,
-												  cmsFLAGS_NOCACHE);
+    // create the transform for concurrent use (cmsFLAGS_NOCACHE)
+    // http://littlecms2.blogspot.com/2010/12/multithreading-question.html
+    cmsHTRANSFORM hTransform = cmsCreateTransform(hInputProfile,
+                                                  TYPE_RGBA_8,
+                                                  hOutputProfile,
+                                                  TYPE_RGBA_8,
+                                                  INTENT_PERCEPTUAL,
+                                                  cmsFLAGS_NOCACHE);
 
-	if (!hTransform) {
-		LOGE("Could not create multi profile xform");
-		return 0;
-	}
+    if (!hTransform) {
+        LOGE("Could not create multi profile xform");
+        return 0;
+    }
 
-	// once the transform is created we can free the profiles
-	cmsCloseProfile(hInputProfile);
-	cmsCloseProfile(hOutputProfile);
-	hInputProfile = hOutputProfile = NULL;
+    // once the transform is created we can free the profiles
+    cmsCloseProfile(hInputProfile);
+    cmsCloseProfile(hOutputProfile);
+    hInputProfile = hOutputProfile = NULL;
 
-	env->ReleaseStringUTFChars(javaString, iccPath);
+    env->ReleaseStringUTFChars(javaString, iccPath);
 
-	return (jlong)(hTransform);
+    return (jlong)(hTransform);
 }
 
 JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_disposeTransform(JNIEnv *env, jobject obj, jlong longHandle) {
-	cmsHTRANSFORM hTransform = (cmsHTRANSFORM)longHandle;
-	cmsDeleteTransform(hTransform);
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM)longHandle;
+    cmsDeleteTransform(hTransform);
 }
 
 
 JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_correctBitmap(JNIEnv *env, jobject obj, jlong longHandle, jobject bitmap) {
-	AndroidBitmapInfo info;
+    AndroidBitmapInfo info;
     void *pixels = NULL;
     int ret = 0;
 
     if (!longHandle) {
-    	LOGE("No tansform handle available");
-    	return;
+        LOGE("No tansform handle available");
+        return;
     }
 
     if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0) {
@@ -90,12 +90,12 @@ JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_correctBitmap(JNIE
         return;
     }
 
-	cmsHTRANSFORM hTransform = (cmsHTRANSFORM)longHandle;
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM)longHandle;
 
-	// do the thing
+    // do the thing
     cmsDoTransform(hTransform, pixels, pixels, info.width * info.height);
 
-	AndroidBitmap_unlockPixels(env, bitmap);
+    AndroidBitmap_unlockPixels(env, bitmap);
     return;
 }
 
