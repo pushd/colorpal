@@ -10,8 +10,6 @@ import android.util.Log;
  */
 public class ColorCorrector {
     private static final String TAG = "ColorPal.ColorCorrector";
-    private static ColorCorrector mInstance;
-    private static Context mContext;
 
     private long mNativeTransformHandle = 0;
 
@@ -27,40 +25,20 @@ public class ColorCorrector {
     public ColorCorrector() {}
 
     /**
-     * Initialize the singleton ColorCorrector with the given context and
-     * icc profile path.
-     * @param context
-     * @param filename
-     * @return
-     */
-    public static boolean init(Context context, String filename) {
-        mContext = context.getApplicationContext();
-        return getInstance().loadDisplayICCProfile(filename);
-    }
-
-    public static ColorCorrector getInstance() {
-        if(mInstance == null) {
-            mInstance = new ColorCorrector();
-        }
-        return mInstance;
-    }
-
-    /**
      * The ICC Profile must be loaded before {@code correctBitmap()} is called
      * <br/>
-     * Note: Do this on a background thread
+     * Will throw an AssertionError if there is any issue loading the profile
+     * or creating the internal transform instance
      *
      * @param filename
      * @return
      */
-    public boolean loadDisplayICCProfile(String filename) {
+    public void loadDisplayICCProfile(String filename) {
         if (mNativeTransformHandle != 0) {
             disposeTransform(mNativeTransformHandle);
         }
 
         mNativeTransformHandle = createTransform(filename);
-
-        return mNativeTransformHandle != 0;
     }
 
     /**
@@ -74,7 +52,7 @@ public class ColorCorrector {
      */
     public void correctBitmap(Bitmap bm) {
         if (mNativeTransformHandle == 0) {
-            throw new IllegalStateException("Can't correct bitmap without native transform");
+            throw new IllegalStateException("Can't correct bitmap without native transform - was the profile loaded?");
         }
 
         if (bm == null) {

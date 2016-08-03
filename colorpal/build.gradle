@@ -34,7 +34,7 @@ publishing {
         colorpal(MavenPublication) {
             groupId 'com.pushd'
             artifactId 'colorpal'
-            version '0.1'
+            version '0.1.1'
             artifact("$buildDir/outputs/aar/colorpal-release.aar")
         }
     }

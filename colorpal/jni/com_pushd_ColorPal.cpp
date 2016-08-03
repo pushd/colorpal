@@ -31,7 +31,9 @@ JNIEXPORT jlong JNICALL Java_com_pushd_colorpal_ColorCorrector_createTransform(J
     cmsHPROFILE hOutputProfile = cmsOpenProfileFromFile(iccPath, "r");
 
     if (!hOutputProfile) {
-        LOGE("Could not open ICC Profile at %s", iccPath);
+        char excmsg[128];
+        sprintf(excmsg, "Could not load ICC Profile at %s", iccPath);
+        env->ThrowNew(env->FindClass("java/lang/AssertionError"), excmsg);
         return 0;
     }
 
@@ -107,7 +109,7 @@ JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_correctBitmap(JNIE
         env->ThrowNew(env->FindClass("java/lang/AssertionError"), excmsg);
         return;
     }
-    return;
+
 }
 
 #ifdef __cplusplus
