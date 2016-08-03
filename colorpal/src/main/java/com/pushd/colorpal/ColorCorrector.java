@@ -74,13 +74,11 @@ public class ColorCorrector {
      */
     public void correctBitmap(Bitmap bm) {
         if (mNativeTransformHandle == 0) {
-            Log.e(TAG, "Can't correct bitmap without native transform");
-            return;
+            throw new IllegalStateException("Can't correct bitmap without native transform");
         }
 
         if (bm == null) {
-            Log.e(TAG, "Can't correct null bitmap");
-            return;
+            throw new IllegalArgumentException("Can't correct null bitmap");
         }
 
         correctBitmap(mNativeTransformHandle, bm);

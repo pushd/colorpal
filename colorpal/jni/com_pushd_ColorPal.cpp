@@ -24,7 +24,7 @@ JNIEXPORT jlong JNICALL Java_com_pushd_colorpal_ColorCorrector_createTransform(J
     cmsHPROFILE hInputProfile = cmsCreate_sRGBProfile();
 
     if (!hInputProfile) {
-        LOGE("Could not open SRGB Profile");
+        env->ThrowNew(env->FindClass("java/lang/AssertionError"), "Could not open SRGB Profile");
         return 0;
     }
 
@@ -45,7 +45,7 @@ JNIEXPORT jlong JNICALL Java_com_pushd_colorpal_ColorCorrector_createTransform(J
                                                   cmsFLAGS_NOCACHE);
 
     if (!hTransform) {
-        LOGE("Could not create multi profile xform");
+        env->ThrowNew(env->FindClass("java/lang/AssertionError"), "Could not create transform");
         return 0;
     }
 
@@ -60,6 +60,11 @@ JNIEXPORT jlong JNICALL Java_com_pushd_colorpal_ColorCorrector_createTransform(J
 }
 
 JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_disposeTransform(JNIEnv *env, jobject obj, jlong longHandle) {
+    if (!longHandle) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "No tansform handle to dispose");
+        return;
+    }
+
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM)longHandle;
     cmsDeleteTransform(hTransform);
 }
@@ -72,7 +77,7 @@ JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_correctBitmap(JNIE
     char excmsg[128];
 
     if (!longHandle) {
-        env->ThrowNew(env->FindClass("java/lang/AssertionError"), "No tansform handle available");
+        env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "No tansform handle provided");
         return;
     }
 
