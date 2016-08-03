@@ -58,9 +58,7 @@ public class ColorCorrector {
             disposeTransform(mNativeTransformHandle);
         }
 
-        long start = SystemClock.uptimeMillis();
         mNativeTransformHandle = createTransform(filename);
-        Log.d(TAG, "loadDisplayICCProfile took " + String.valueOf(SystemClock.uptimeMillis() - start) + "ms");
 
         return mNativeTransformHandle != 0;
     }
@@ -80,8 +78,11 @@ public class ColorCorrector {
             return;
         }
 
-        long start = SystemClock.uptimeMillis();
+        if (bm == null) {
+            Log.e(TAG, "Can't correct null bitmap");
+            return;
+        }
+
         correctBitmap(mNativeTransformHandle, bm);
-        Log.d(TAG, "correctBitmap took " + String.valueOf(SystemClock.uptimeMillis() - start) + "ms");
     }
 }

@@ -69,33 +69,39 @@ JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_correctBitmap(JNIE
     AndroidBitmapInfo info;
     void *pixels = NULL;
     int ret = 0;
+    char excmsg[128];
 
     if (!longHandle) {
-        LOGE("No tansform handle available");
+        env->ThrowNew(env->FindClass("java/lang/AssertionError"), "No tansform handle available");
         return;
     }
 
     if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0) {
-        LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
+        sprintf(excmsg, "AndroidBitmap_getInfo() failed ! error=%d", ret);
+        env->ThrowNew(env->FindClass("java/lang/AssertionError"), excmsg);
         return;
     }
 
     if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
-        LOGE("Bitmap format is not RGBA_8888 !");
+        env->ThrowNew(env->FindClass("java/lang/AssertionError"), "Bitmap format is not RGBA_8888 !");
         return;
     }
 
     if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0) {
-        LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
+        sprintf(excmsg, "AndroidBitmap_lockPixels() failed ! error=%d", ret);
+        env->ThrowNew(env->FindClass("java/lang/AssertionError"), excmsg);
         return;
     }
 
-    cmsHTRANSFORM hTransform = (cmsHTRANSFORM)longHandle;
-
     // do the thing
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM)longHandle;
     cmsDoTransform(hTransform, pixels, pixels, info.width * info.height);
 
-    AndroidBitmap_unlockPixels(env, bitmap);
+    if ((ret = AndroidBitmap_unlockPixels(env, bitmap)) < 0) {
+        sprintf(excmsg, "AndroidBitmap_unlockPixels() failed ! error=%d", ret);
+        env->ThrowNew(env->FindClass("java/lang/AssertionError"), excmsg);
+        return;
+    }
     return;
 }
 
