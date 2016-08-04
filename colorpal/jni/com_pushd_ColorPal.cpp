@@ -6,6 +6,7 @@
 #include <android/log.h>
 #include <android/bitmap.h>
 #include <endian.h>
+#include <stdarg.h>
 
 #define  LOG_TAG    "ColorPal.CorrectorJNI"
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
@@ -16,24 +17,38 @@
 extern "C" {
 #endif
 
-JNIEXPORT jlong JNICALL Java_com_pushd_colorpal_ColorCorrector_createTransform(JNIEnv *env, jobject obj, jstring javaString) {
+// AssertionErrors are fancy, ThrowNew won't work since it has an Object ctor, not a String ctor
+void throwAssertionError(JNIEnv* env, const char *msgFormat, ...) {
+    char msg[128];
+    va_list args;
+    va_start(args, msgFormat);
+    vsprintf(msg, msgFormat, args);
+    va_end(args);
 
-    // this will give us java's "modified" UTF-8 but for icc profile paths this shouldn't matter
-    const char *iccPath = env->GetStringUTFChars(javaString, JNI_FALSE);
+    jclass cls = env->FindClass("java/lang/AssertionError");
+    jmethodID constructor = env->GetMethodID(cls, "<init>", "(Ljava/lang/Object;)V");
+    jstring jmsg = env->NewStringUTF(msg);
+    jthrowable throwable = (jthrowable)env->NewObject(cls, constructor, (jobject)jmsg);
+    env->Throw(throwable);
+}
+
+JNIEXPORT jlong JNICALL Java_com_pushd_colorpal_ColorCorrector_createTransform(JNIEnv *env, jobject obj, jstring javaString) {
 
     cmsHPROFILE hInputProfile = cmsCreate_sRGBProfile();
 
     if (!hInputProfile) {
-        env->ThrowNew(env->FindClass("java/lang/AssertionError"), "Could not open SRGB Profile");
+        throwAssertionError(env, "Could not open SRGB Profile");
         return 0;
     }
+
+    // this will give us java's "modified" UTF-8 but for icc profile paths this shouldn't matter
+    const char *iccPath = env->GetStringUTFChars(javaString, JNI_FALSE);
 
     cmsHPROFILE hOutputProfile = cmsOpenProfileFromFile(iccPath, "r");
 
     if (!hOutputProfile) {
-        char excmsg[128];
-        sprintf(excmsg, "Could not load ICC Profile at %s", iccPath);
-        env->ThrowNew(env->FindClass("java/lang/AssertionError"), excmsg);
+        throwAssertionError(env, "Could not load ICC Profile at %s", iccPath);
+        env->ReleaseStringUTFChars(javaString, iccPath);
         return 0;
     }
 
@@ -47,7 +62,8 @@ JNIEXPORT jlong JNICALL Java_com_pushd_colorpal_ColorCorrector_createTransform(J
                                                   cmsFLAGS_NOCACHE);
 
     if (!hTransform) {
-        env->ThrowNew(env->FindClass("java/lang/AssertionError"), "Could not create transform");
+        throwAssertionError(env, "Could not create transform");
+        env->ReleaseStringUTFChars(javaString, iccPath);
         return 0;
     }
 
@@ -84,19 +100,17 @@ JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_correctBitmap(JNIE
     }
 
     if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0) {
-        sprintf(excmsg, "AndroidBitmap_getInfo() failed ! error=%d", ret);
-        env->ThrowNew(env->FindClass("java/lang/AssertionError"), excmsg);
+        throwAssertionError(env, "AndroidBitmap_getInfo() failed ! error=%d", ret);
         return;
     }
 
     if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
-        env->ThrowNew(env->FindClass("java/lang/AssertionError"), "Bitmap format is not RGBA_8888 !");
+        throwAssertionError(env, "Bitmap format is not RGBA_8888 !");
         return;
     }
 
     if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0) {
-        sprintf(excmsg, "AndroidBitmap_lockPixels() failed ! error=%d", ret);
-        env->ThrowNew(env->FindClass("java/lang/AssertionError"), excmsg);
+        throwAssertionError(env, "AndroidBitmap_lockPixels() failed ! error=%d", ret);
         return;
     }
 
@@ -105,8 +119,7 @@ JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_correctBitmap(JNIE
     cmsDoTransform(hTransform, pixels, pixels, info.width * info.height);
 
     if ((ret = AndroidBitmap_unlockPixels(env, bitmap)) < 0) {
-        sprintf(excmsg, "AndroidBitmap_unlockPixels() failed ! error=%d", ret);
-        env->ThrowNew(env->FindClass("java/lang/AssertionError"), excmsg);
+        throwAssertionError(env, "AndroidBitmap_unlockPixels() failed ! error=%d", ret);
         return;
     }
 
