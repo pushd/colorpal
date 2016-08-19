@@ -16,20 +16,22 @@
 
 package com.pushd.colorpal;
 
-import android.content.Context;
 import android.graphics.Bitmap;
-import android.os.SystemClock;
-import android.util.Log;
+import android.renderscript.Allocation;
+import android.renderscript.Element;
+import android.renderscript.RenderScript;
+import android.renderscript.ScriptIntrinsic3DLUT;
+import android.renderscript.Type;
 
 public class ColorCorrector {
     private static final String TAG = "ColorPal.ColorCorrector";
 
     private long mNativeTransformHandle = 0;
 
-
     private native void disposeTransform(long nativeTransformHandle);
     private native long createTransform(String displayProfilePath);
     private native void correctBitmap(long nativeTransformHandle, Bitmap bm);
+    private native int[] create3DLUT(long nativeTransformHandle);
 
     static {
         System.loadLibrary("colorpal");
@@ -52,6 +54,23 @@ public class ColorCorrector {
         }
 
         mNativeTransformHandle = createTransform(filename);
+    }
+
+    public ScriptIntrinsic3DLUT create3DLUT(RenderScript rs) {
+        Type.Builder tb = new Type.Builder(rs, Element.U8_4(rs));
+        tb.setX(64);
+        tb.setY(64);
+        tb.setZ(64);
+
+        Type t = tb.create();
+        Allocation allocation = Allocation.createTyped(rs, t);
+
+        int dat[] = create3DLUT(mNativeTransformHandle);
+        allocation.copyFromUnchecked(dat);
+
+        ScriptIntrinsic3DLUT lut = ScriptIntrinsic3DLUT.create(rs, Element.U8_4(rs));
+        lut.setLUT(allocation);
+        return lut;
     }
 
     /**

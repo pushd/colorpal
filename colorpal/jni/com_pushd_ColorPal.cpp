@@ -23,6 +23,7 @@
 #include <android/bitmap.h>
 #include <endian.h>
 #include <stdarg.h>
+#include <math.h>
 
 #define  LOG_TAG    "ColorPal.CorrectorJNI"
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
@@ -46,6 +47,42 @@ void throwAssertionError(JNIEnv* env, const char *msgFormat, ...) {
     jstring jmsg = env->NewStringUTF(msg);
     jthrowable throwable = (jthrowable)env->NewObject(cls, constructor, (jobject)jmsg);
     env->Throw(throwable);
+}
+
+JNIEXPORT jintArray JNICALL Java_com_pushd_colorpal_ColorCorrector_create3DLUT(JNIEnv *env, jobject obj, jlong longHandle) {
+    static const int DIM = 64; // 8MB LUT
+
+    if (!longHandle) {
+        throwAssertionError("No tansform handle available");
+        return NULL;
+    }
+
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM)longHandle;
+
+    jintArray ret = env->NewIntArray(DIM * DIM * DIM);
+    jint *lut = env->GetIntArrayElements(ret, NULL);
+
+    for (uint16_t r = 0; r < DIM; ++r) {
+        for (uint16_t g = 0; g < DIM; ++g) {
+            for (uint16_t b = 0; b < DIM; ++b) {
+                int r_scaled = floor((double) r / (DIM - 1) * 255.0 + 0.5);
+                int b_scaled = floor((double) b / (DIM - 1) * 255.0 + 0.5);
+                int g_scaled = floor((double) g / (DIM - 1) * 255.0 + 0.5);
+
+                // little-endian RGBA -> ABGR
+                uint32_t pixel =  (0xFF << 24) | (b_scaled << 16) | (g_scaled << 8) | (r_scaled << 0);
+                uint32_t mapped = 0;
+                cmsDoTransform(hTransform, &pixel, &mapped, 1);
+
+                // expects [b][g][r] "flat" index
+                lut[b*DIM*DIM + g*DIM + r] = mapped;
+                //LOGD("pixel: 0x%08x, transformed: 0x%08x", pixel, mapped);
+            }
+        }
+    }
+
+    env->ReleaseIntArrayElements(ret, lut, 0);
+    return ret;
 }
 
 JNIEXPORT jlong JNICALL Java_com_pushd_colorpal_ColorCorrector_createTransform(JNIEnv *env, jobject obj, jstring javaString) {
