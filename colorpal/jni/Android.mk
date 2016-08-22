@@ -26,7 +26,7 @@ LOCAL_LDFLAGS 	+= \
 		-llog \
 		-ljnigraphics
 
-LOCAL_C_INCLUDES := ../lcms2/include/
+LOCAL_C_INCLUDES := $(LCMS_ROOT)/include/
 
 LOCAL_SRC_FILES  := \
     $(LCMS_SRC_PATH)/cmsalpha.c \

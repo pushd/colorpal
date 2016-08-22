@@ -53,7 +53,7 @@ JNIEXPORT jintArray JNICALL Java_com_pushd_colorpal_ColorCorrector_create3DLUT(J
     static const int DIM = 64; // 8MB LUT
 
     if (!longHandle) {
-        throwAssertionError("No tansform handle available");
+        throwAssertionError(env, "No tansform handle available");
         return NULL;
     }
 
