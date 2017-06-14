@@ -1,4 +1,6 @@
-# ColorPal - a simple wrapper for [Little-CMS](http://littlecms.com)
+# ColorPal - simple icc profile color correction for android
+
+ColorPal is powered by [Little-CMS](http://littlecms.com)
 
 [![](https://jitpack.io/v/pushd/colorpal.svg)](https://jitpack.io/#pushd/colorpal)
 
