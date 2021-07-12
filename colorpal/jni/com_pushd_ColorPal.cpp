@@ -181,9 +181,9 @@ JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_correctBitmap(JNIE
 JNIEXPORT jint JNICALL Java_com_pushd_colorpal_ColorCorrector_correctedColor(JNIEnv *env, jobject obj, jlong longHandle, jint argb) {
 
     // ARGB -> ABGR
-    uint8_t a = argb >> 24 & 0xFF;
-    uint8_t r = argb >> 16 & 0xFF;
-    uint8_t g = argb >> 8 & 0xFF;
+    uint8_t a = (argb >> 24) & 0xFF;
+    uint8_t r = (argb >> 16) & 0xFF;
+    uint8_t g = (argb >> 8) & 0xFF;
     uint8_t b = argb & 0xFF;
 
     uint32_t pixel = a << 24 | b << 16 | g << 8 | r;
@@ -193,10 +193,10 @@ JNIEXPORT jint JNICALL Java_com_pushd_colorpal_ColorCorrector_correctedColor(JNI
     cmsDoTransform(hTransform, &pixel, &mapped, 1);
 
     // ABGR -> ARGB
-    a = mapped >> 24 & 0xFF;
-    r = mapped >> 16 & 0xFF;
-    g = mapped >> 8 & 0xFF;
-    b = mapped & 0xFF;
+    a = (mapped >> 24) & 0xFF;
+    b = (mapped >> 16) & 0xFF;
+    g = (mapped >> 8) & 0xFF;
+    r = mapped & 0xFF;
 
     return a << 24 | r << 16 | g << 8 | b;
 }
