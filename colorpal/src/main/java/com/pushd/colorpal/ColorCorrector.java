@@ -17,6 +17,7 @@
 package com.pushd.colorpal;
 
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
@@ -29,15 +30,21 @@ public class ColorCorrector {
     private long mNativeTransformHandle = 0;
 
     private native void disposeTransform(long nativeTransformHandle);
+
     private native long createTransform(String displayProfilePath);
+
     private native void correctBitmap(long nativeTransformHandle, Bitmap bm);
+
     private native int[] create3DLUT(long nativeTransformHandle);
+
+    private native int correctedColor(long nativeTransformHandle, int argb);
 
     static {
         System.loadLibrary("colorpal");
     }
 
-    public ColorCorrector() {}
+    public ColorCorrector() {
+    }
 
     /**
      * The ICC Profile must be loaded before {@code correctBitmap()} is called
@@ -93,4 +100,13 @@ public class ColorCorrector {
 
         correctBitmap(mNativeTransformHandle, bm);
     }
+
+    public int correctedColor(int argb) {
+        if (mNativeTransformHandle == 0) {
+            throw new IllegalStateException("Can't correct bitmap without native transform - was the profile loaded?");
+        }
+
+        return correctedColor(mNativeTransformHandle, argb);
+    }
 }
+
