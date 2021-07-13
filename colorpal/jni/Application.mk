@@ -14,5 +14,6 @@
 # limitations under the License.
 #
 
+# APP_ABI is ignored by the gradle NdkBuild
 APP_ABI := armeabi-v7a
-APP_PLATFORM := android-21
+APP_PLATFORM := android-22

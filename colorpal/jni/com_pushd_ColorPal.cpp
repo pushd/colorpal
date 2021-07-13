@@ -141,7 +141,7 @@ JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_disposeTransform(J
 }
 
 
-JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_correctBitmap(JNIEnv *env, jobject obj, jlong longHandle, jobject bitmap) {
+JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_correctBitmap(JNIEnv *env, jobject /*obj*/, jlong longHandle, jobject bitmap) {
     AndroidBitmapInfo info;
     void *pixels = NULL;
     int ret = 0;
@@ -176,6 +176,30 @@ JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_correctBitmap(JNIE
         return;
     }
 
+}
+
+JNIEXPORT jint JNICALL Java_com_pushd_colorpal_ColorCorrector_correctedColor(JNIEnv */*env*/, jobject /*obj*/, jlong longHandle, jint argb) {
+
+    // ARGB -> ABGR
+    uint8_t a = (argb >> 24) & 0xFF;
+    uint8_t r = (argb >> 16) & 0xFF;
+    uint8_t g = (argb >> 8) & 0xFF;
+    uint8_t b = argb & 0xFF;
+
+    // do not map alpha channel, so replace with 0xFF
+    uint32_t pixel = 0xFF << 24 | b << 16 | g << 8 | r;
+
+    uint32_t mapped = 0;
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM)longHandle;
+    cmsDoTransform(hTransform, &pixel, &mapped, 1);
+
+    // ABGR -> ARGB
+    b = (mapped >> 16) & 0xFF;
+    g = (mapped >> 8) & 0xFF;
+    r = mapped & 0xFF;
+
+    // use original alpha
+    return a << 24 | r << 16 | g << 8 | b;
 }
 
 #ifdef __cplusplus

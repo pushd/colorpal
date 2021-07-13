@@ -18,7 +18,7 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LCMS_ROOT 		:= ../../lcms2
+LCMS_ROOT 		:= $(LOCAL_PATH)/../../lcms2
 LCMS_SRC_PATH 	:= $(LCMS_ROOT)/src
 
 LOCAL_MODULE     := colorpal

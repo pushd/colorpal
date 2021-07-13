@@ -4,12 +4,12 @@ Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
 
 android {
-    compileSdkVersion 24
-    buildToolsVersion "24.0.0"
+    compileSdkVersion 30
+    buildToolsVersion "30.0.2"
 
     defaultConfig {
         minSdkVersion 22
-        targetSdkVersion 24
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0"
     }
@@ -17,45 +17,20 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            ndk {
+                abiFilters "armeabi-v7a"
+            }
         }
     }
-    sourceSets.main {
-        jniLibs.srcDir 'libs/'
-        jni.srcDirs = [] //disable automatic ndk-build callcenter code here
-    }
-
-    // Call external ndk-build(.cmd) script to build the native code
-    task ndkBuild(type: Exec) {
-        def ndkDirProperty = properties.getProperty('ndk.dir')
-        def ndkDirPrefix = ndkDirProperty != null ? ndkDirProperty + '/' : ''
-
-        commandLine "${ndkDirPrefix}ndk-build", '-C', file('./jni/').absolutePath,
-                '-j', Runtime.runtime.availableProcessors()
-    }
-
-    tasks.withType(JavaCompile) {
-        compileTask -> compileTask.dependsOn ndkBuild
-    }
-
-    // Cleanup task to remove previously generated binaries
-    task ndkClean(type: Exec) {
-        def ndkDirProperty = properties.getProperty('ndk.dir')
-        def ndkDirPrefix = ndkDirProperty != null ? ndkDirProperty + '/' : ''
-
-        commandLine "${ndkDirPrefix}ndk-build",'-C', file('./jni/').absolutePath, 'clean'
-    }
-
-    tasks.withType(Delete) {
-        cleanTask -> cleanTask.dependsOn ndkClean
+    externalNativeBuild {
+        ndkBuild {
+            path file('jni/Android.mk')
+        }
     }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    testCompile 'junit:junit:4.12'
+    api fileTree(dir: 'libs', include: ['*.jar'])
 }
-
-// jitpack.io
-apply plugin: 'com.github.dcendents.android-maven'
 
 group='com.github.pushd'
