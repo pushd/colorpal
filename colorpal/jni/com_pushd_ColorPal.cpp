@@ -181,10 +181,12 @@ JNIEXPORT void JNICALL Java_com_pushd_colorpal_ColorCorrector_correctBitmap(JNIE
 JNIEXPORT jint JNICALL Java_com_pushd_colorpal_ColorCorrector_correctedColor(JNIEnv */*env*/, jobject /*obj*/, jlong longHandle, jint argb) {
 
     // ARGB -> ABGR
+    uint8_t a = (argb >> 24) & 0xFF;
     uint8_t r = (argb >> 16) & 0xFF;
     uint8_t g = (argb >> 8) & 0xFF;
     uint8_t b = argb & 0xFF;
 
+    // do not map alpha channel, so replace with 0xFF
     uint32_t pixel = 0xFF << 24 | b << 16 | g << 8 | r;
 
     LOGD("-> ARGB pixel 0x%x", pixel);
@@ -199,8 +201,8 @@ JNIEXPORT jint JNICALL Java_com_pushd_colorpal_ColorCorrector_correctedColor(JNI
     r = mapped & 0xFF;
 
     LOGD("-> ABGR mapped 0x%x", mapped);
-    LOGD("-> returning ARGB 0x%x", 0xFF << 24 | r << 16 | g << 8 | b);
-    return 0xFF << 24 | r << 16 | g << 8 | b;
+    LOGD("-> returning ARGB 0x%x", a << 24 | r << 16 | g << 8 | b);
+    return a << 24 | r << 16 | g << 8 | b;
 }
 
 #ifdef __cplusplus
