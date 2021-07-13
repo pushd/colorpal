@@ -103,7 +103,7 @@ public class ColorCorrector {
 
     public int correctedColor(int argb) {
         if (mNativeTransformHandle == 0) {
-            throw new IllegalStateException("Can't correct bitmap without native transform - was the profile loaded?");
+            throw new IllegalStateException("Can't correct color without native transform - was the profile loaded?");
         }
 
         return correctedColor(mNativeTransformHandle, argb);
