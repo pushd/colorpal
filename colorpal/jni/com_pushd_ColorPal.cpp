@@ -189,8 +189,6 @@ JNIEXPORT jint JNICALL Java_com_pushd_colorpal_ColorCorrector_correctedColor(JNI
     // do not map alpha channel, so replace with 0xFF
     uint32_t pixel = 0xFF << 24 | b << 16 | g << 8 | r;
 
-    LOGD("-> ARGB pixel 0x%x", pixel);
-
     uint32_t mapped = 0;
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM)longHandle;
     cmsDoTransform(hTransform, &pixel, &mapped, 1);
@@ -200,8 +198,7 @@ JNIEXPORT jint JNICALL Java_com_pushd_colorpal_ColorCorrector_correctedColor(JNI
     g = (mapped >> 8) & 0xFF;
     r = mapped & 0xFF;
 
-    LOGD("-> ABGR mapped 0x%x", mapped);
-    LOGD("-> returning ARGB 0x%x", a << 24 | r << 16 | g << 8 | b);
+    // use original alpha
     return a << 24 | r << 16 | g << 8 | b;
 }
 
