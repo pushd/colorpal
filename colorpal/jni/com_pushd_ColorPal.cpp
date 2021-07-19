@@ -112,7 +112,7 @@ JNIEXPORT jlong JNICALL Java_com_pushd_colorpal_ColorCorrector_createTransform(J
                                                   hOutputProfile,
                                                   TYPE_RGBA_8,
                                                   INTENT_PERCEPTUAL,
-                                                  cmsFLAGS_NOCACHE);
+                                                  cmsFLAGS_NOCACHE|cmsFLAGS_NOOPTIMIZE);
 
     if (!hTransform) {
         throwAssertionError(env, "Could not create transform");
