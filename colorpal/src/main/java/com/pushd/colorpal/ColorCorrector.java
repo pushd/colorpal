@@ -17,12 +17,19 @@
 package com.pushd.colorpal;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
 import android.renderscript.ScriptIntrinsic3DLUT;
 import android.renderscript.Type;
+import android.util.Log;
+
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 
 public class ColorCorrector {
     private static final String TAG = "ColorPal.ColorCorrector";
@@ -34,6 +41,8 @@ public class ColorCorrector {
     private native long createTransform(String displayProfilePath);
 
     private native void correctBitmap(long nativeTransformHandle, Bitmap bm);
+
+    private native int[] createGLLUT(long mNativeTransformHandle);
 
     private native int[] create3DLUT(long nativeTransformHandle);
 
@@ -78,6 +87,18 @@ public class ColorCorrector {
         ScriptIntrinsic3DLUT lut = ScriptIntrinsic3DLUT.create(rs, Element.U8_4(rs));
         lut.setLUT(allocation);
         return lut;
+    }
+
+    /**
+     * Creates a LUT bitmap for use in GL shaders.
+     * See: <a href="https://github.com/BradLarson/GPUImage/blob/master/framework/Source/GPUImageLookupFilter.h"></a>
+     * <a href="https://github.com/cats-oss/android-gpuimage/blob/master/library/src/main/java/jp/co/cyberagent/android/gpuimage/filter/GPUImageLookupFilter.java"></a>
+     */
+    public Bitmap createGLLUT() {
+        int dat[] = createGLLUT(mNativeTransformHandle);
+        Bitmap bitmap = Bitmap.createBitmap(512, 512, Bitmap.Config.ARGB_8888);
+        bitmap.copyPixelsFromBuffer(IntBuffer.wrap(dat));
+        return bitmap;
     }
 
     /**

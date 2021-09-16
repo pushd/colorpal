@@ -47,10 +47,53 @@ void throwAssertionError(JNIEnv* env, const char *msgFormat, ...) {
     jstring jmsg = env->NewStringUTF(msg);
     jthrowable throwable = (jthrowable)env->NewObject(cls, constructor, (jobject)jmsg);
     env->Throw(throwable);
+
+
+}
+
+JNIEXPORT jintArray JNICALL Java_com_pushd_colorpal_ColorCorrector_createGLLUT(JNIEnv *env, jobject obj, jlong longHandle) {
+    static const int DIM = 64; // 1MB LUT
+    static const int NQUADS = 8;
+
+    if (!longHandle) {
+        throwAssertionError(env, "No tansform handle available");
+        return NULL;
+    }
+
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM)longHandle;
+
+    jintArray ret = env->NewIntArray(DIM * DIM * DIM);
+    jint* lut = env->GetIntArrayElements(ret, NULL);
+
+    // See https://github.com/BradLarson/GPUImage/blob/master/framework/Source/GPUImageLookupFilter.h
+    // Lookup texture is organised as 8x8 quads of 64x64 pixels representing all possible RGB colors:
+    for (int by = 0; by < NQUADS; by++) {
+        for (int bx = 0; bx < NQUADS; bx++) {
+            for (int g = 0; g < DIM; g++) {
+                for (int r = 0; r < DIM; r++) {
+                    //
+                    uint rr = (uint)(r * 255.0 / 63.0 + 0.5);
+                    uint gg = (uint)(g * 255.0 / 63.0 + 0.5);
+                    uint bb = (uint)((bx + by * 8) * 255.0 / 63.0 + 0.5);
+                    uint aa = 255;
+                    uint x = r + bx * 64;
+                    uint y = g + by * 64;
+                    // little-endian ABGR
+                    uint32_t pixel =  (aa << 24) | (bb << 16) | (gg << 8) | (rr << 0);
+                    uint32_t mapped = 0;
+                    cmsDoTransform(hTransform, &pixel, &mapped, 1);
+                    // lut[y][x] = mapped;
+                    lut[(y * DIM * NQUADS) + x] = mapped;
+                }
+            }
+        }
+    }
+    env->ReleaseIntArrayElements(ret, lut, 0);
+    return ret;
 }
 
 JNIEXPORT jintArray JNICALL Java_com_pushd_colorpal_ColorCorrector_create3DLUT(JNIEnv *env, jobject obj, jlong longHandle) {
-    static const int DIM = 64; // 8MB LUT
+    static const int DIM = 64; // 1MB LUT
 
     if (!longHandle) {
         throwAssertionError(env, "No tansform handle available");
